@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CSV Reconciliation</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script type="text/javascript">
+    function Upload() {
+        var fileUpload = document.getElementById("fileUpload");
+        var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.csv|.txt)$/;
+        if (regex.test(fileUpload.value.toLowerCase())) {
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var table = document.createElement("table");
+                    var rows = e.target.result.split("\n");
+                    for (var i = 0; i < rows.length; i++) {
+                        var cells = rows[i].split(",");
+                        if (cells.length > 1) {
+                            var row = table.insertRow(-1);
+                            for (var j = 0; j < cells.length; j++) {
+                                var cell = row.insertCell(-1);
+                                cell.innerHTML = cells[j];
+                            }
+                        }
+                    }
+                    var dvCSV = document.getElementById("dvCSV");
+                    dvCSV.innerHTML = "";
+                    dvCSV.appendChild(table);
+                }
+                reader.readAsText(fileUpload.files[0]);
+            } else {
+                alert("This browser does not support HTML5.");
+            }
+        } else {
+            alert("Please upload a valid CSV file.");
+        }
+    }
+</script>
+
+  </head>
+  <body>
+    <div>
+        <h1>CSV Reconciliation</h1>
+        <label for="csvFile1">CSV File 1:</label>
+        <input type="file" id="csvFile1" accept=".csv" />
+        <label >Transaction ID:</label>
+        <select style="width: 100px;" id="transactionColumn1"></select>
+        <label >Status:</label>
+        <select style="width: 100px;" id="statusColumn1"></select>
+        <label >Amount:</label>
+        <select style="width: 100px;" id="amountColumn1"></select>
+        
+    </div>
+    <div>
+        <label for="csvFile2">CSV File 2:</label>
+        <input type="file" id="csvFile2" accept=".csv" />
+        <label >Transaction ID:</label>
+        <select style="width: 100px;" id="transactionColumn2"></select>
+        <label >Status:</label>
+        <select style="width: 100px;" id="statusColumn2"></select>
+        <label >Amount:</label>
+        <select style="width: 100px;" id="amountColumn2"></select>
+    
+        <button onclick="processFiles()">Process CSV Files</button>
+        
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <script>
+function populateColumnOptions(headers, transactionColumnSelect, statusColumnSelect, amountColumnSelect) {
+  transactionColumnSelect.innerHTML = '';
+  statusColumnSelect.innerHTML = '';
+  amountColumnSelect.innerHTML = '';
+
+  headers.forEach((header, index) => {
+    const transactionOption = document.createElement('option');
+    const statusOption = document.createElement('option');
+    const amountOption = document.createElement('option');
+
+    transactionOption.value = header; // Use header value instead of index
+    transactionOption.text = header;
+    statusOption.value = header; // Use header value instead of index
+    statusOption.text = header;
+    amountOption.value = header; // Use header value instead of index
+    amountOption.text = header;
+
+    transactionColumnSelect.appendChild(transactionOption);
+    statusColumnSelect.appendChild(statusOption);
+    amountColumnSelect.appendChild(amountOption);
+  });
+}
+
+
+function handleFileSelection(event, fileNumber) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const contents = e.target.result;
+    const data = parseCSV(contents);
+    const headers = Object.keys(data[0]);
+
+    if (fileNumber === 1) {
+      transactionColumnSelect1 = document.getElementById('transactionColumn1');
+      statusColumnSelect1 = document.getElementById('statusColumn1');
+      amountColumnSelect1 = document.getElementById('amountColumn1');
+      populateColumnOptions(headers, transactionColumnSelect1, statusColumnSelect1, amountColumnSelect1);
+    } else if (fileNumber === 2) {
+      transactionColumnSelect2 = document.getElementById('transactionColumn2');
+      statusColumnSelect2 = document.getElementById('statusColumn2');
+      amountColumnSelect2 = document.getElementById('amountColumn2');
+      populateColumnOptions(headers, transactionColumnSelect2, statusColumnSelect2, amountColumnSelect2);
+    }
+  };
+  reader.readAsText(file);
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  transactionColumnSelect1 = document.getElementById('transactionColumn1');
+  statusColumnSelect1 = document.getElementById('statusColumn1');
+  amountColumnSelect1 = document.getElementById('amountColumn1');
+  transactionColumnSelect2 = document.getElementById('transactionColumn2');
+  statusColumnSelect2 = document.getElementById('statusColumn2');
+  amountColumnSelect2 = document.getElementById('amountColumn2');
+
+  const csvFile1 = document.getElementById('csvFile1');
+  const csvFile2 = document.getElementById('csvFile2');
+
+  csvFile1.addEventListener('change', function (event) {
+    handleFileSelection(event, 1);
+  });
+  csvFile2.addEventListener('change', function (event) {
+    handleFileSelection(event, 2);
+  });
+});
+
+
+
+      function processFiles() {
+        const csvFile1 = document.getElementById('csvFile1').files[0];
+        const csvFile2 = document.getElementById('csvFile2').files[0];
+
+        const transactionColumnIndex1 = transactionColumnSelect1.value;
+  const statusColumnIndex1 = statusColumnSelect1.value;
+  const amountColumnIndex1 = amountColumnSelect1.value;
+  const transactionColumnIndex2 = transactionColumnSelect2.value;
+  const statusColumnIndex2 = statusColumnSelect2.value;
+  const amountColumnIndex2 = amountColumnSelect2.value;
+
+  if (!transactionColumnIndex1 || !statusColumnIndex1 || !amountColumnIndex1 || !transactionColumnIndex2 || !statusColumnIndex2 || !amountColumnIndex2) {
+    alert('Please select valid transaction, amount and status columns for both CSV files.');
+    return;
+  }
+        
+        const reader1 = new FileReader();
+  reader1.onload = function (e) {
+    const contents1 = e.target.result;
+    const data1 = parseCSV(contents1);
+   
+
+    const reader2 = new FileReader();
+    reader2.onload = function (e) {
+      const contents2 = e.target.result;
+      const data2 = parseCSV(contents2);
+      
+      const headers1 = Object.keys(data1[0]);
+      const headers2 = Object.keys(data2[0]);
+
+      populateColumnOptions(headers1, transactionColumnSelect1, statusColumnSelect1, amountColumnSelect1);
+      populateColumnOptions(headers2, transactionColumnSelect2, statusColumnSelect2, amountColumnSelect2);
+
+      // Process the data after reading both CSV files
+      processData(data1, data2, transactionColumnIndex1, statusColumnIndex1, amountColumnIndex1, transactionColumnIndex2, statusColumnIndex2, amountColumnIndex2);
+    };
+    reader2.readAsText(csvFile2);
+  };
+  reader1.readAsText(csvFile1);
+}
+
+function parseCSV(csvContent) {
+  const rows = csvContent.split('\n');
+  const data = [];
+  const headers = rows[0].split(',');
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i].split(',');
+    if (row.length === headers.length) {
+      const rowData = {};
+      for (let j = 0; j < headers.length; j++) {
+        rowData[headers[j]] = row[j];
+      }
+      data.push(rowData);
+    }
+  }
+
+  return data;
+}
+
+
+function processData(data1, data2, transactionColumnIndex1, statusColumnIndex1, amountColumnIndex1, transactionColumnIndex2, statusColumnIndex2, amountColumnIndex2) {
+      // Create a map of order IDs to statuses and amounts from both CSV files
+      const orderDataMap = {};
+
+      data1.forEach((row) => {
+    if (row[statusColumnIndex1] === "Failure") {
+      row[statusColumnIndex1] = "FAILED";
+    }
+  });
+
+  data2.forEach((row) => {
+    if (row[statusColumnIndex2] === "Failure") {
+      row[statusColumnIndex2] = "FAILED";
+    }
+  });
+
+  data1.forEach((row) => {
+    const orderID = String(row[transactionColumnIndex1]).trim();
+    const amount = typeof row[amountColumnIndex1] === 'number'
+      ? row[amountColumnIndex1]
+      : row[amountColumnIndex1]
+        ? parseFloat(row[amountColumnIndex1].replace(/,/g, ''))
+        : 0;
+    if (!orderDataMap[orderID]) {
+      orderDataMap[orderID] = { status1: row[statusColumnIndex1], status2: null, amount1: amount, amount2: null };
+    } else {
+      orderDataMap[orderID].amount1 += amount;
+    }
+  });
+
+  data2.forEach((row) => {
+    const orderID = String(row[transactionColumnIndex2]).trim();
+    const amount = typeof row[amountColumnIndex2] === 'number'
+      ? row[amountColumnIndex2]
+      : row[amountColumnIndex2]
+        ? parseFloat(row[amountColumnIndex2].replace(/,/g, ''))
+        : 0;
+    if (!orderDataMap[orderID]) {
+      orderDataMap[orderID] = { status1: null, status2: row[statusColumnIndex2], amount1: null, amount2: amount };
+    } else {
+      orderDataMap[orderID].status2 = row[statusColumnIndex2];
+      orderDataMap[orderID].amount2 += amount;
+    }
+  });
+
+      // Reconcile the order statuses and amounts between CF and CFGT
+      const reconciledData = [];
+Object.keys(orderDataMap).forEach((orderID) => {
+  const { status1, status2, amount1, amount2 } = orderDataMap[orderID];
+  const row = { TRANSACTION_ID: orderID };
+
+  if (status1 && status2 && status1 === status2) {
+    row.reconciliation_reason = 'Matched';
+    row.status1 = status1;
+    row.status2 = status2;
+    row.amount1 = amount1 || '';
+    row.amount2 = amount2 || '';
+  } else if (status1 && status2) {
+    row.reconciliation_reason = 'Status Mismatch';
+    row.status1 = status1;
+    row.status2 = status2;
+    row.amount1 = amount1 || '';
+    row.amount2 = amount2 || '';
+  } else if (status1) {
+    row.reconciliation_reason = 'Order ID not found in CFGT';
+    row.status1 = status1;
+    row.status2 = '';
+    row.amount1 = amount1 || '';
+    row.amount2 = '';
+  } else {
+    row.reconciliation_reason = 'Order ID not found in CF';
+    row.status1 = '';
+    row.status2 = status2;
+    row.amount1 = '';
+    row.amount2 = amount2 || '';
+  }
+
+  reconciledData.push(row);
+});
+
+// Create a new workbook and worksheet to store the reconciled data
+const reconciledWorkbook = XLSX.utils.book_new();
+const reconciledWorksheet = XLSX.utils.json_to_sheet(reconciledData);
+
+// Add the reconciled worksheet to the workbook
+XLSX.utils.book_append_sheet(reconciledWorkbook, reconciledWorksheet, 'Reconciliation');
+
+// Generate the summary
+const summaryFile1 = Object.create(null);
+const summaryFile2 = Object.create(null);
+
+reconciledData.forEach((row) => {
+  const reconciliationReason = row.reconciliation_reason;
+  const status1 = row.status1;
+  const status2 = row.status2;
+  const amount1 = row.amount1 || 0;
+  const amount2 = row.amount2 || 0;
+
+  // Update summaryFile1
+  if (!summaryFile1[reconciliationReason]) {
+    summaryFile1[reconciliationReason] = { total: 0 };
+  }
+
+  if (!summaryFile1[reconciliationReason][status1]) {
+    summaryFile1[reconciliationReason][status1] = { count: 0, amount: 0, matchedStatuses: {} };
+  }
+
+  summaryFile1[reconciliationReason][status1].count++;
+  summaryFile1[reconciliationReason][status1].amount += amount1;
+  summaryFile1[reconciliationReason].total++;
+
+  // Update summaryFile2
+  if (!summaryFile2[reconciliationReason]) {
+    summaryFile2[reconciliationReason] = { total: 0 };
+  }
+
+  if (!summaryFile2[reconciliationReason][status2]) {
+    summaryFile2[reconciliationReason][status2] = { count: 0, amount: 0, matchedStatuses: {} };
+  }
+
+  summaryFile2[reconciliationReason][status2].count++;
+  summaryFile2[reconciliationReason][status2].amount += amount2;
+  summaryFile2[reconciliationReason].total++;
+
+  // Track the order IDs and their corresponding statuses in Status Mismatch category
+  if (reconciliationReason === 'Status Mismatch') {
+    if (status1 && status2) {
+      if (!summaryFile1[reconciliationReason][status1].matchedStatuses[status2]) {
+        summaryFile1[reconciliationReason][status1].matchedStatuses[status2] = {
+          count: 0,
+          amount: 0,
+        };
+      }
+      summaryFile1[reconciliationReason][status1].matchedStatuses[status2].count++;
+      summaryFile1[reconciliationReason][status1].matchedStatuses[status2].amount += amount1;
+
+      if (!summaryFile2[reconciliationReason][status2].matchedStatuses[status1]) {
+        summaryFile2[reconciliationReason][status2].matchedStatuses[status1] = {
+          count: 0,
+          amount: 0,
+        };
+      }
+      summaryFile2[reconciliationReason][status2].matchedStatuses[status1].count++;
+      summaryFile2[reconciliationReason][status2].matchedStatuses[status1].amount += amount2;
+    }
+  }
+});
+      
+      // Create a summary sheet
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['Summary'],
+        [],
+        ['Reconciliation Reason', 'Status', 'Count', 'Amount']
+      ]);
+
+      let rowIndex = 4;
+
+      // Populate summarySheet with data from summaryFile1
+      Object.keys(summaryFile1).forEach((reconciliationReason) => {
+        const row = [reconciliationReason, '', summaryFile1[reconciliationReason].total, '', ''];
+      
+        XLSX.utils.sheet_add_aoa(summarySheet, [row], { origin: -1, skipHeader: true });
+      
+        Object.keys(summaryFile1[reconciliationReason]).forEach((status) => {
+          if (status !== 'total') {
+            const count = summaryFile1[reconciliationReason][status]?.count || '';
+            const amount = summaryFile1[reconciliationReason][status]?.amount || '';
+            const correspondingStatus = '';
+      
+            const subRow = ['', status, count, amount, correspondingStatus];
+      
+            XLSX.utils.sheet_add_aoa(summarySheet, [subRow], { origin: -1, skipHeader: true });
+      
+            // Add further bifurcation of order IDs in Status Mismatch category
+            if (reconciliationReason === 'Status Mismatch') {
+              const matchedStatuses = summaryFile1[reconciliationReason][status]?.matchedStatuses;
+              if (matchedStatuses) {
+                Object.keys(matchedStatuses).forEach((matchedStatus) => {
+                  const matchedCount = matchedStatuses[matchedStatus]?.count || '';
+                  const matchedAmount = matchedStatuses[matchedStatus]?.amount || '';
+                  const matchedSubRow = ['', '', matchedCount, matchedAmount, matchedStatus];
+                  XLSX.utils.sheet_add_aoa(summarySheet, [matchedSubRow], { origin: -1, skipHeader: true });
+                });
+              }
+            }
+          }
+        
+        rowIndex++;
+      });
+      
+      rowIndex++;
+      });
+      
+      rowIndex++; // Add an empty row
+      rowIndex++; // Add an empty row
+      
+      // Add space between Summary 1 and Summary 2
+      XLSX.utils.sheet_add_aoa(summarySheet, [['']], { origin: -1, skipHeader: true });
+      XLSX.utils.sheet_add_aoa(summarySheet, [['Summary 2']], { origin: -1, skipHeader: true });
+      
+      rowIndex += 2;
+      // Populate summarySheet with data from summaryFile2
+      Object.keys(summaryFile2).forEach((reconciliationReason) => {
+        const row = [reconciliationReason, '', summaryFile2[reconciliationReason].total, ''];
+      
+        XLSX.utils.sheet_add_aoa(summarySheet, [row], { origin: -1, skipHeader: true });
+      
+        Object.keys(summaryFile2[reconciliationReason]).forEach((status) => {
+          if (status !== 'total') {
+            const count = summaryFile2[reconciliationReason][status]?.count || '';
+            const amount = summaryFile2[reconciliationReason][status]?.amount || '';
+            const subRow = ['', status, count, amount];
+      
+            XLSX.utils.sheet_add_aoa(summarySheet, [subRow], { origin: -1, skipHeader: true });
+          }
+        });
+      
+        rowIndex++;
+      });
+      
+      // Add the summary sheet to the reconciled workbook
+      XLSX.utils.book_append_sheet(reconciledWorkbook, summarySheet, 'Summary');
+
+      // Save the reconciled workbook to a file
+      XLSX.writeFile(reconciledWorkbook, 'ReconciledData.xlsx');
+    };
+
+      
+    </script>
+  </body>
+</html>
